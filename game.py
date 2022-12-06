@@ -6,10 +6,14 @@ import time
 
 pygame.init()
 
+PLAYER_SPEED = 2
+
 PLAYER_COLOR = (0, 0, 0)
+PLAYER_HIDDEN_COLOR = (102, 102, 102)
 SURFACE_COLOR = (167, 255, 100)
 GUARD_COLOR = (255, 0, 0)
 BUSH_COLOR = (0, 255, 0)
+
 WIDTH = 500
 HEIGHT = 500
 
@@ -31,14 +35,57 @@ class Player(pygame.sprite.Sprite):
        # Update the position of this object by setting the values of rect.x and rect.y
        self.rect = self.image.get_rect()
 
-class Guard(pygame.sprite.Sprite):
-    def __init__(self, color, width, height, bounces):
+class PatrolGuard(pygame.sprite.Sprite):
+    def __init__(self, color, width, height, speed, positions):
        pygame.sprite.Sprite.__init__(self)
        self.image = pygame.Surface([width, height])
        self.image.fill(color)
 
        self.rect = self.image.get_rect()
-       self.bounces = bounces
+
+       self.speed = speed
+
+       self.patrolPositions = positions
+       self.positionCounter = 0
+       self.currentPosition = self.patrolPositions[self.positionCounter]
+    
+    def guard_movement(self):
+        if (
+            (self.rect.x >= self.currentPosition[0] - 5 and self.rect.x <= self.currentPosition[0] + 5)
+            and
+            (self.rect.y >= self.currentPosition[1] - 5 and self.rect.y <= self.currentPosition[1] + 5)
+            ):
+            self.positionCounter += 1
+            if (self.positionCounter == len(self.patrolPositions)):
+                self.positionCounter = 0
+
+            self.currentPosition = self.patrolPositions[self.positionCounter]
+        else:
+            if (self.rect.x > self.currentPosition[0] + self.speed):
+                self.rect.x -= self.speed
+            elif (self.rect.x < self.currentPosition[0] - self.speed):
+                self.rect.x += self.speed
+
+            if (self.rect.y > self.currentPosition[1] + self.speed):
+                self.rect.y -= self.speed
+            elif (self.rect.y < self.currentPosition[1] - self.speed):
+                self.rect.y += self.speed
+
+class ShootingGuard(pygame.sprite.Sprite):
+    def __init__(self, color, width, height):
+       pygame.sprite.Sprite.__init__(self)
+       self.image = pygame.Surface([width, height])
+       self.image.fill(color)
+
+       self.rect = self.image.get_rect()
+
+class ChasingGuard(pygame.sprite.Sprite):
+    def __init__(self, color, width, height):
+       pygame.sprite.Sprite.__init__(self)
+       self.image = pygame.Surface([width, height])
+       self.image.fill(color)
+
+       self.rect = self.image.get_rect()
 
 class Bush(pygame.sprite.Sprite):
     # Constructor. Pass in the color of the block,
@@ -78,33 +125,52 @@ size = (WIDTH, HEIGHT)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption(f'Level: {level}')
 
-# Not exactly sure what these are for????
-# all_sprites_list = pygame.sprite.Group()
+# Sprite groups
+all_sprites_list = pygame.sprite.Group()
 
-# guards_list = pygame.sprite.Group()
+guards_list = pygame.sprite.Group()
 
-# bushes_list = pygame.sprite.Group()
+bushes_list = pygame.sprite.Group()
 
+# Player
 player = Player(PLAYER_COLOR, 10, 10)
-guard1 = Guard(GUARD_COLOR, 10, 10, 0)
-bush1 = Bush(BUSH_COLOR, 30, 30)
 
-player.rect.x = 100
+player.rect.x = 300
 player.rect.y = 100
 
+all_sprites_list.add(player)
+
+# Guards
+guard1 = PatrolGuard(GUARD_COLOR, 10, 10, 5, [[50, 50], [450, 450], [50, 450], [50, 50], [450, 50], [450, 450]])
 guard1.rect.x = random.randint(50, 350)
 guard1.rect.y = random.randint(50, 350)
+all_sprites_list.add(guard1)
+guards_list.add(guard1)
 
+guard2 = PatrolGuard(GUARD_COLOR, 10, 10, 5, [[50, 50], [450, 450], [50, 450], [50, 50], [450, 50], [450, 450]])
+guard2.rect.x = random.randint(50, 350)
+guard2.rect.y = random.randint(50, 350)
+all_sprites_list.add(guard2)
+guards_list.add(guard2)
+
+guard3 = PatrolGuard(GUARD_COLOR, 10, 10, 5, [[50, 50], [450, 450], [50, 450], [50, 50], [450, 50], [450, 450]])
+guard3.rect.x = random.randint(50, 350)
+guard3.rect.y = random.randint(50, 350)
+all_sprites_list.add(guard3)
+guards_list.add(guard3)
+
+# Bushes
+bush1 = Bush(BUSH_COLOR, 30, 30)
 bush1.rect.x = random.randint(50, 350)
 bush1.rect.y = random.randint(50, 350)
+all_sprites_list.add(bush1)
+bushes_list.add(bush1)
 
-# all_sprites_list.add(player)
-# all_sprites_list.add(guard1)
-# all_sprites_list.add(bush1)
-
-# guards_list.add(guard1)
-
-# bushes_list.add(bush1)
+bush2 = Bush(BUSH_COLOR, 30, 30)
+bush2.rect.x = random.randint(50, 350)
+bush2.rect.y = random.randint(50, 350)
+all_sprites_list.add(bush2)
+bushes_list.add(bush2)
 
 running = True
 clock = pygame.time.Clock()
@@ -153,13 +219,13 @@ while running:
 
     # Actually moving the player character
     if (move["up"]):
-        player.rect.y -= 2
+        player.rect.y -= PLAYER_SPEED
     if (move["down"]):
-        player.rect.y += 2
+        player.rect.y += PLAYER_SPEED
     if (move["right"]):
-        player.rect.x += 2
+        player.rect.x += PLAYER_SPEED
     if (move["left"]):
-        player.rect.x -= 2
+        player.rect.x -= PLAYER_SPEED
 
     if (player.rect.x > WIDTH - player.width):
         player.rect.x = WIDTH - player.width
@@ -169,6 +235,24 @@ while running:
         player.rect.y = HEIGHT - player.height
     if (player.rect.y < 0):
         player.rect.y = 0
+    
+    # Allowing player to be hidden if behind guard
+    for bush in bushes_list:
+        if pygame.sprite.collide_rect(player, bush):
+            is_hidden = True
+            player.image.fill(PLAYER_HIDDEN_COLOR)
+        else:
+            is_hidden = False
+            player.image.fill(PLAYER_COLOR)
+    
+    # Testing if player collides with guard
+    for guard in guards_list:
+        guard.guard_movement()
+        if pygame.sprite.collide_rect(player, guard) and not is_hidden:
+            running = False
+
+    for object in all_sprites_list:
+        screen.blit(object.image, object.rect)
 
     screen.blit(player.image, player.rect)
     screen.blit(guard1.image, guard1.rect)
