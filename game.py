@@ -14,7 +14,7 @@ SURFACE_COLOR = (167, 255, 100)
 
 GUARD_PATROL_COLOR = (255, 0, 0)
 GUARD_CHASING_COLOR = (171, 9, 0)
-GUARD_SHOOTER_COLOR = (255, 71, 61)
+GUARD_EDGE_COLOR = (255, 71, 61)
 
 BUSH_COLOR = (0, 255, 0)
 WIN_AREA_COLOR = (255, 255, 0)
@@ -194,7 +194,7 @@ class WinArea(pygame.sprite.Sprite):
 
 def random_positions():
     positions = []
-    for i in range(random.randint(3, 6)):
+    for i in range(2):
         positions.append([random.randint(50, 450),random.randint(50, 450)])
     
     return positions
@@ -205,8 +205,9 @@ guards_list = pygame.sprite.Group()
 bushes_list = pygame.sprite.Group()
 
 # Level variables
-level = 1
+level = 9
 size = (WIDTH, HEIGHT)
+enemies = [1, 1, 0]
 
 # Player variables
 jumps = 1
@@ -222,6 +223,13 @@ def create_patrol_guard():
     all_sprites_list.add(guard)
     guards_list.add(guard)
 
+def create_edge_guard():
+    guard = PatrolGuard(GUARD_EDGE_COLOR, 10, 10, 5, [[10, 10], [490, 10], [490, 490], [10, 490]])
+    guard.rect.x = random.randint(0, 500)
+    guard.rect.y = 10
+    all_sprites_list.add(guard)
+    guards_list.add(guard)
+
 def create_chasing_guard():
     guard = ChasingGuard(GUARD_CHASING_COLOR, 10, 10, 1)
     guard.rect.x = random.randint(0, 500)
@@ -229,12 +237,24 @@ def create_chasing_guard():
     all_sprites_list.add(guard)
     guards_list.add(guard)
 
-def create_shooting_guard():
-    guard = ShootingGuard(GUARD_SHOOTER_COLOR, 10, 10, 6)
-    guard.rect.x = random.randint(0, 500)
-    guard.rect.y = random.randint(0, 500)
-    all_sprites_list.add(guard)
-    guards_list.add(guard)
+# def create_shooting_guard():
+#     guard = ShootingGuard(GUARD_SHOOTER_COLOR, 10, 10, 6)
+#     guard.rect.x = random.randint(0, 500)
+#     guard.rect.y = random.randint(0, 500)
+#     all_sprites_list.add(guard)
+#     guards_list.add(guard)
+
+def summon_guards():
+    for i in range(len(enemies)):
+        if (i == 0):
+            for a in range(enemies[i]):
+                create_patrol_guard()
+        elif (i == 1):
+            for a in range(enemies[i]):
+                create_chasing_guard()
+        elif (i == 2):
+            for a in range(enemies[i]):
+                create_edge_guard()
 
 # Player
 player = Player(PLAYER_COLOR, 10, 10)
@@ -245,23 +265,9 @@ player.rect.y = 50
 all_sprites_list.add(player)
 
 # Guards
-for i in range(1):
-    create_patrol_guard()
-    create_chasing_guard()
+summon_guards()
 
 # Bushes
-bush1 = Bush(BUSH_COLOR, 30, 30)
-bush1.rect.x = random.randint(50, 350)
-bush1.rect.y = random.randint(50, 350)
-all_sprites_list.add(bush1)
-bushes_list.add(bush1)
-
-bush2 = Bush(BUSH_COLOR, 30, 30)
-bush2.rect.x = random.randint(50, 350)
-bush2.rect.y = random.randint(50, 350)
-all_sprites_list.add(bush2)
-bushes_list.add(bush2)
-
 bush3 = Bush(BUSH_COLOR, 30, 30)
 bush3.rect.x = player.rect.x - player.width
 bush3.rect.y = player.rect.y - player.height
@@ -275,6 +281,7 @@ all_sprites_list.add(winArea)
 
 running = True
 clock = pygame.time.Clock()
+pygame.display.set_caption(f'Level: {level}')
 
 # Player movement
 move = {}
@@ -304,10 +311,20 @@ def reset_game():
     bush3.rect.y = player.rect.y - player.height
     all_sprites_list.add(bush3)
     bushes_list.add(bush3)
+    
+    global enemies
+    enemies[0] = level
+    enemies[1] = level
+    if (level % 5 == 0):
+        print(True)
+        enemies[2] = int(level / 5)
 
-    for i in range(level):
-        create_patrol_guard()
-        create_chasing_guard()
+    print(enemies)
+    summon_guards()
+
+    # for i in range(level):
+    #     create_patrol_guard()
+    #     create_chasing_guard()
     return
 
 while running:
@@ -324,25 +341,25 @@ while running:
         if event.type == pygame.KEYDOWN:
             # if keydown event happened
             # than printing a string to output
-            if event.key == pygame.K_w:
+            if event.key == pygame.K_w or event.key == pygame.K_UP:
                 move["up"] = True
-            if event.key == pygame.K_s:
+            if event.key == pygame.K_s or event.key == pygame.K_DOWN:
                 move["down"] = True
-            if event.key == pygame.K_d:
+            if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
                 move["right"] = True
-            if event.key == pygame.K_a:
+            if event.key == pygame.K_a or event.key == pygame.K_LEFT:
                 move["left"] = True
         
         if event.type == pygame.KEYUP:
             # if keydown event happened
             # than printing a string to output
-            if event.key == pygame.K_w:
+            if event.key == pygame.K_w or event.key == pygame.K_UP:
                 move["up"] = False
-            if event.key == pygame.K_s:
+            if event.key == pygame.K_s or event.key == pygame.K_DOWN:
                 move["down"] = False
-            if event.key == pygame.K_d:
+            if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
                 move["right"] = False
-            if event.key == pygame.K_a:
+            if event.key == pygame.K_a or event.key == pygame.K_LEFT:
                 move["left"] = False
 
     # Actually moving the player character
@@ -377,19 +394,7 @@ while running:
         guard.guard_movement(player.rect)
         if pygame.sprite.collide_rect(player, guard) and not is_hidden:
             level = 1
-
-            bush1 = Bush(BUSH_COLOR, 30, 30)
-            bush1.rect.x = random.randint(50, 350)
-            bush1.rect.y = random.randint(50, 350)
-            all_sprites_list.add(bush1)
-            bushes_list.add(bush1)
-
-            bush2 = Bush(BUSH_COLOR, 30, 30)
-            bush2.rect.x = random.randint(50, 350)
-            bush2.rect.y = random.randint(50, 350)
-            all_sprites_list.add(bush2)
-            bushes_list.add(bush2)
-
+            enemies = [1, 1, 0]
             reset_game()
 
     if pygame.sprite.collide_rect(player, winArea) and not is_hidden:
