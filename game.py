@@ -1,5 +1,6 @@
 import pygame
 from pygame.locals import *
+import sys
 import numpy
 import random
 import time
@@ -21,6 +22,24 @@ WIN_AREA_COLOR = (255, 255, 0)
 
 WIDTH = 500
 HEIGHT = 500
+
+# Global Variables
+running = True
+clock = pygame.time.Clock()
+
+# Game variables
+is_playing = False
+is_paused = False
+font = pygame.font.SysFont(None, 30)
+
+# Level variables
+level = 1
+size = (WIDTH, HEIGHT)
+enemies = [1, 1, 0]
+
+all_sprites_list = pygame.sprite.Group()
+guards_list = pygame.sprite.Group()
+bushes_list = pygame.sprite.Group()
 
 class Player(pygame.sprite.Sprite):
     # Constructor. Pass in the color of the block,
@@ -199,16 +218,6 @@ def random_positions():
     
     return positions
 
-
-all_sprites_list = pygame.sprite.Group()
-guards_list = pygame.sprite.Group()
-bushes_list = pygame.sprite.Group()
-
-# Level variables
-level = 9
-size = (WIDTH, HEIGHT)
-enemies = [1, 1, 0]
-
 # Player variables
 jumps = 1
 is_hidden = False
@@ -256,40 +265,6 @@ def summon_guards():
             for a in range(enemies[i]):
                 create_edge_guard()
 
-# Player
-player = Player(PLAYER_COLOR, 10, 10)
-
-player.rect.x = 50
-player.rect.y = 50
-
-all_sprites_list.add(player)
-
-# Guards
-summon_guards()
-
-# Bushes
-bush3 = Bush(BUSH_COLOR, 30, 30)
-bush3.rect.x = player.rect.x - player.width
-bush3.rect.y = player.rect.y - player.height
-all_sprites_list.add(bush3)
-bushes_list.add(bush3)
-
-winArea = WinArea(WIN_AREA_COLOR, 70, 70)
-winArea.rect.x = 450
-winArea.rect.y = 450
-all_sprites_list.add(winArea)
-
-running = True
-clock = pygame.time.Clock()
-pygame.display.set_caption(f'Level: {level}')
-
-# Player movement
-move = {}
-move["up"] = False
-move["down"] = False
-move["left"] = False
-move["right"] = False
-
 def reset_game():
     global level
     pygame.display.set_caption(f'Level: {level}')
@@ -316,10 +291,8 @@ def reset_game():
     enemies[0] = level
     enemies[1] = level
     if (level % 5 == 0):
-        print(True)
         enemies[2] = int(level / 5)
-
-    print(enemies)
+        
     summon_guards()
 
     # for i in range(level):
@@ -327,90 +300,219 @@ def reset_game():
     #     create_chasing_guard()
     return
 
-while running:
-    # Setting the framerate to 30fps just
-    # to see the result properly
-    clock.tick(30)
+"""
+A function that can be used to write text on our screen and buttons
+"""
+def draw_text(text, font, color, surface, x, y):
+    textobj = font.render(text, 1, color)
+    textrect = textobj.get_rect()
+    textrect.topleft = (x, y)
+    surface.blit(textobj, textrect)
 
-    screen.fill(SURFACE_COLOR)
+click = False
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+def main_menu():
+    running = True
 
-        if event.type == pygame.KEYDOWN:
-            # if keydown event happened
-            # than printing a string to output
-            if event.key == pygame.K_w or event.key == pygame.K_UP:
-                move["up"] = True
-            if event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                move["down"] = True
-            if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-                move["right"] = True
-            if event.key == pygame.K_a or event.key == pygame.K_LEFT:
-                move["left"] = True
+    while running:
+        clock.tick(30)
+
+        screen.fill(SURFACE_COLOR)
+        draw_text('Main Menu', font, (0,0,0), screen, 200, 40)
+
+        mx, my = pygame.mouse.get_pos()
+
+        #creating buttons
+        button_1 = pygame.Rect(150, 100, 200, 50)
+        button_2 = pygame.Rect(150, 180, 200, 50)
+
+        #defining functions when a certain button is pressed
+        global click
+        if (click):
+            print(click)
+        if button_1.collidepoint((mx, my)):
+            if click:
+                game()
+        if button_2.collidepoint((mx, my)):
+            if click:
+                options()
+
+        pygame.draw.rect(screen, (255, 0, 0), button_1)
+        pygame.draw.rect(screen, (255, 0, 0), button_2)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        #writing text on top of button
+        draw_text('PLAY', font, (0,0,0), screen, 220, 115)
+        draw_text('SETTINGS', font, (0,0,0), screen, 200, 195)
+
+        click = False
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    click = True
         
-        if event.type == pygame.KEYUP:
-            # if keydown event happened
-            # than printing a string to output
-            if event.key == pygame.K_w or event.key == pygame.K_UP:
-                move["up"] = False
-            if event.key == pygame.K_s or event.key == pygame.K_DOWN:
-                move["down"] = False
-            if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-                move["right"] = False
-            if event.key == pygame.K_a or event.key == pygame.K_LEFT:
-                move["left"] = False
+        pygame.display.update()
 
-    # Actually moving the player character
-    if (move["up"]):
-        player.rect.y -= PLAYER_SPEED
-    if (move["down"]):
-        player.rect.y += PLAYER_SPEED
-    if (move["right"]):
-        player.rect.x += PLAYER_SPEED
-    if (move["left"]):
-        player.rect.x -= PLAYER_SPEED
+def start_game():
+    # Player
+    global player
+    player = Player(PLAYER_COLOR, 10, 10)
 
-    if (player.rect.x > WIDTH - player.width):
-        player.rect.x = WIDTH - player.width
-    if (player.rect.x < 0):
-        player.rect.x = 0
-    if (player.rect.y > HEIGHT - player.height):
-        player.rect.y = HEIGHT - player.height
-    if (player.rect.y < 0):
-        player.rect.y = 0
-    
-    # Allowing player to be hidden if behind guard
-    is_hidden = False
-    player.image.fill(PLAYER_COLOR)
-    for bush in bushes_list:
-        if pygame.sprite.collide_rect(player, bush):
-            is_hidden = True
-            player.image.fill(PLAYER_HIDDEN_COLOR)
-    
-    # Testing if player collides with guard
-    for guard in guards_list:
-        guard.guard_movement(player.rect)
-        if pygame.sprite.collide_rect(player, guard) and not is_hidden:
-            level = 1
-            enemies = [1, 1, 0]
+    player.rect.x = 50
+    player.rect.y = 50
+
+    all_sprites_list.add(player)
+
+    # Guards
+    summon_guards()
+
+    # Bushes
+    bush3 = Bush(BUSH_COLOR, 30, 30)
+    bush3.rect.x = player.rect.x - player.width
+    bush3.rect.y = player.rect.y - player.height
+    all_sprites_list.add(bush3)
+    bushes_list.add(bush3)
+
+    global winArea
+    winArea = WinArea(WIN_AREA_COLOR, 70, 70)
+    winArea.rect.x = 450
+    winArea.rect.y = 450
+    all_sprites_list.add(winArea)
+
+    pygame.display.set_caption(f'Level: {level}')
+
+    # Player movement
+    global move
+    move = {}
+    move["up"] = False
+    move["down"] = False
+    move["left"] = False
+    move["right"] = False
+
+def game():
+    global level
+
+    running = True
+    start_game()
+    while running:
+        # Setting the framerate to 30fps just
+        # to see the result properly
+        clock.tick(30)
+
+        screen.fill(SURFACE_COLOR)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.KEYDOWN:
+                # if keydown event happened
+                # than printing a string to output
+                if event.key == pygame.K_w or event.key == pygame.K_UP:
+                    move["up"] = True
+                if event.key == pygame.K_s or event.key == pygame.K_DOWN:
+                    move["down"] = True
+                if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
+                    move["right"] = True
+                if event.key == pygame.K_a or event.key == pygame.K_LEFT:
+                    move["left"] = True
+
+                if event.key == pygame.K_ESCAPE:
+                    if (is_paused == True):
+                        is_paused = False
+                    else:
+                        is_paused = True
+            
+            if event.type == pygame.KEYUP:
+                # if keydown event happened
+                # than printing a string to output
+                if event.key == pygame.K_w or event.key == pygame.K_UP:
+                    move["up"] = False
+                if event.key == pygame.K_s or event.key == pygame.K_DOWN:
+                    move["down"] = False
+                if event.key == pygame.K_d or event.key == pygame.K_RIGHT:
+                    move["right"] = False
+                if event.key == pygame.K_a or event.key == pygame.K_LEFT:
+                    move["left"] = False
+
+        # Actually moving the player character
+        if (move["up"]):
+            player.rect.y -= PLAYER_SPEED
+        if (move["down"]):
+            player.rect.y += PLAYER_SPEED
+        if (move["right"]):
+            player.rect.x += PLAYER_SPEED
+        if (move["left"]):
+            player.rect.x -= PLAYER_SPEED
+
+        if (player.rect.x > WIDTH - player.width):
+            player.rect.x = WIDTH - player.width
+        if (player.rect.x < 0):
+            player.rect.x = 0
+        if (player.rect.y > HEIGHT - player.height):
+            player.rect.y = HEIGHT - player.height
+        if (player.rect.y < 0):
+            player.rect.y = 0
+        
+        # Allowing player to be hidden if behind guard
+        global is_hidden
+        is_hidden = False
+        player.image.fill(PLAYER_COLOR)
+        for bush in bushes_list:
+            if pygame.sprite.collide_rect(player, bush):
+                is_hidden = True
+                player.image.fill(PLAYER_HIDDEN_COLOR)
+        
+        # Testing if player collides with guard
+        for guard in guards_list:
+            guard.guard_movement(player.rect)
+            if pygame.sprite.collide_rect(player, guard) and not is_hidden:
+                level = 1
+                global enemies
+                enemies = [1, 1, 0]
+                reset_game()
+
+        if pygame.sprite.collide_rect(player, winArea) and not is_hidden:
+            level += 1
+            pygame.display.set_caption(f'Level: {level}')
             reset_game()
 
-    if pygame.sprite.collide_rect(player, winArea) and not is_hidden:
-        level += 1
-        pygame.display.set_caption(f'Level: {level}')
-        reset_game()
+        # Displaying the objects in our scene
+        for object in bushes_list:
+            screen.blit(object.image, object.rect)
 
-    # Displaying the objects in our scene
-    for object in bushes_list:
-        screen.blit(object.image, object.rect)
+        screen.blit(winArea.image, winArea.rect)
 
-    screen.blit(winArea.image, winArea.rect)
+        for object in guards_list:
+            screen.blit(object.image, object.rect)
 
-    for object in guards_list:
-        screen.blit(object.image, object.rect)
+        screen.blit(player.image, player.rect)
+        
+        pygame.display.update()
 
-    screen.blit(player.image, player.rect)
-    
-    pygame.display.update()
+
+"""
+This function is called when the "OPTIONS" button is clicked.
+"""
+def options():
+    running = True
+    while running:
+        clock.tick(30)
+
+        screen.fill(SURFACE_COLOR)
+ 
+        draw_text('SETTINGS', font, (255, 255, 255), screen, 20, 20)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+       
+        pygame.display.update()
+
+game()
