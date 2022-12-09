@@ -309,6 +309,8 @@ def update_player_color():
         player_color = (0, 255, 255)
     elif (lives == 5):
         player_color = (0, 255, 80)
+    elif (lives > 5):
+        lives = 5
     
     player.image.fill(player_color)
 
