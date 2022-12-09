@@ -8,8 +8,6 @@ import time
 pygame.init()
 
 PLAYER_SPEED = 5
-
-PLAYER_COLOR = (0, 0, 0)
 PLAYER_HIDDEN_COLOR = (102, 102, 102)
 SURFACE_COLOR = (167, 255, 100)
 
@@ -24,6 +22,7 @@ WIDTH = 500
 HEIGHT = 500
 
 # Global Variables
+player_color = (0, 0, 0)
 running = True
 clock = pygame.time.Clock()
 
@@ -36,6 +35,10 @@ font = pygame.font.SysFont(None, 30)
 level = 1
 size = (WIDTH, HEIGHT)
 enemies = [1, 1, 0]
+
+# Player variables
+lives = 1
+is_hidden = False
 
 all_sprites_list = pygame.sprite.Group()
 guards_list = pygame.sprite.Group()
@@ -218,10 +221,6 @@ def random_positions():
     
     return positions
 
-# Player variables
-jumps = 1
-is_hidden = False
-
 screen = pygame.display.set_mode(size)
 
 # Functions to create enemies
@@ -294,11 +293,24 @@ def reset_game():
         enemies[2] = int(level / 5)
         
     summon_guards()
-
-    # for i in range(level):
-    #     create_patrol_guard()
-    #     create_chasing_guard()
     return
+
+def update_player_color():
+    global player_color
+    global lives
+
+    if (lives == 1):
+        player_color = (0, 0, 0)
+    elif (lives == 2):
+        player_color = (180, 0, 255)
+    elif (lives == 3):
+        player_color = (0, 0, 255)
+    elif (lives == 4):
+        player_color = (0, 255, 255)
+    elif (lives == 5):
+        player_color = (0, 255, 80)
+    
+    player.image.fill(player_color)
 
 """
 A function that can be used to write text on our screen and buttons
@@ -362,7 +374,7 @@ def main_menu():
 def start_game():
     # Player
     global player
-    player = Player(PLAYER_COLOR, 10, 10)
+    player = Player(player_color, 10, 10)
 
     player.rect.x = 50
     player.rect.y = 50
@@ -397,6 +409,8 @@ def start_game():
 
 def game():
     global level
+    global lives
+    global player_color
 
     running = True
     start_game()
@@ -463,7 +477,7 @@ def game():
         # Allowing player to be hidden if behind guard
         global is_hidden
         is_hidden = False
-        player.image.fill(PLAYER_COLOR)
+        player.image.fill(player_color)
         for bush in bushes_list:
             if pygame.sprite.collide_rect(player, bush):
                 is_hidden = True
@@ -473,13 +487,22 @@ def game():
         for guard in guards_list:
             guard.guard_movement(player.rect)
             if pygame.sprite.collide_rect(player, guard) and not is_hidden:
-                level = 1
-                global enemies
-                enemies = [1, 1, 0]
+                lives -= 1
+                if (lives == 0):
+                    lives = 1
+
+                    level = 1
+                    global enemies
+                    enemies = [1, 1, 0]
+                
+                update_player_color()
                 reset_game()
 
         if pygame.sprite.collide_rect(player, winArea) and not is_hidden:
             level += 1
+            if level % 5 == 0:
+                lives += 1
+                update_player_color()
             pygame.display.set_caption(f'Level: {level}')
             reset_game()
 
