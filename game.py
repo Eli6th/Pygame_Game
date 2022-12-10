@@ -264,7 +264,36 @@ def summon_guards():
             for a in range(enemies[i]):
                 create_edge_guard()
 
+def next_level_animation():
+    screen.fill(SURFACE_COLOR)
+
+    block_width = 50
+    block_height = 50
+
+    for i in range(int(WIDTH / block_width)):
+        for a in range(int(HEIGHT / block_height)):
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+            img = pygame.Surface([block_width, block_height])
+            img.fill((0, 0, 0))
+            screen.blit(img, [block_width * (i), block_height * (a)])
+            time.sleep(0.01)
+            pygame.display.update()
+    
+    time.sleep(0.2)
+
 def reset_game():
+    next_level_animation()
+
+    global move
+    move["up"] = False
+    move["down"] = False
+    move["left"] = False
+    move["right"] = False
+
     global level
     pygame.display.set_caption(f'Level: {level}')
 
@@ -300,15 +329,15 @@ def update_player_color():
     global lives
 
     if (lives == 1):
-        player_color = (0, 0, 0)
+        player_color = (0, 0, 0) # Black
     elif (lives == 2):
-        player_color = (180, 0, 255)
+        player_color = (255, 0, 255) # Purple
     elif (lives == 3):
-        player_color = (0, 0, 255)
+        player_color = (115, 0, 255) # Dark Purple
     elif (lives == 4):
-        player_color = (0, 255, 255)
+        player_color = (0, 10, 255) # Blue
     elif (lives == 5):
-        player_color = (0, 255, 80)
+        player_color = (0, 208, 255) # Green -> Blends in with the background
     elif (lives > 5):
         lives = 5
     
